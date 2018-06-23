@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Everybody-draw</title>
+    <style>
+        html,
+        body {
+            background-color: #eee;
+        }
+
+        #mycanvas {
+            border: solid 1px #aaa;
+            background-color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <canvas id="mycanvas" width="800" height="600"></canvas>
+    </div>
+
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io('http://localhost:3000');
+    </script>
+    <script>
+        var position = {
+            x: 0,
+            y: 0
+        };
+        var config = {
+            lineWidth : 5,
+            strokeStyle : '#000',
+            otherStrokeStyle : '#6F9FD8'
+        }
+
+        function setPosition(e) {
+            position.x = e.clientX;
+            position.y = e.clientY;
+        }
+
+        var canvas = document.getElementById('mycanvas');
+        var ctx = canvas.getContext("2d");
+
+        $('#mycanvas').mousedown(setPosition);
+
+        $('#mycanvas').mouseleave(setPosition);
+
+        $('#mycanvas').mouseenter(setPosition);
+
+        $('#mycanvas').mousemove(e => {
+            if (e.buttons !== 1) return;
+
+            ctx.beginPath();
+
+            ctx.lineWidth = config.lineWidth;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = config.strokeStyle;
+
+            var coord = {from:{...position}, to:{...position}};
+            ctx.moveTo(position.x, position.y);
+
+            setPosition(e);
+            coord.to = {...position};
+            
+            ctx.lineTo(position.x, position.y);
+            ctx.stroke();
+
+            socket.emit('draw', coord);
+        });
+
+        socket.on('draw', coordinates=>{
+            ctx.beginPath();
+
+            ctx.lineWidth = config.lineWidth;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = config.otherStrokeStyle;
+
+            ctx.moveTo(coordinates.from.x, coordinates.from.y);
+            ctx.lineTo(coordinates.to.x, coordinates.to.y);
+            ctx.stroke();
+        });
+    </script>
+</body>
+
+</html>
